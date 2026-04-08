@@ -14,7 +14,7 @@ type OperationForms = {
   simulacion: Record<string, unknown>;
 };
 
-export default function DashboardPage() {
+export function DashboardViewPage({ initialView }: { initialView: string }) {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [summary, setSummary] = useState<Record<string, number | string>>({});
@@ -95,7 +95,14 @@ export default function DashboardPage() {
         setSummary(summaryPayload);
         setReports(reportsPayload);
         setCodes(nextCodes);
-        setActiveKey(currentUser.role === "ADMINISTRADOR" ? "usuarios" : "clientes");
+        const allowedModuleKeys = modules.filter((module) => module.roles.includes(currentUser.role)).map((module) => module.key);
+        const defaultView = currentUser.role === "ADMINISTRADOR" ? "usuarios" : "clientes";
+        const allowedViews = new Set(["reportes", "operaciones", ...allowedModuleKeys]);
+        const nextView = allowedViews.has(initialView) ? initialView : defaultView;
+        setActiveKey(nextView);
+        if (nextView !== initialView) {
+          router.replace(buildDashboardRoute(nextView));
+        }
       } catch {
         clearSession();
         router.replace("/login");
@@ -111,7 +118,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [initialView, router]);
 
   useEffect(() => {
     if (!user) {
@@ -230,6 +237,11 @@ export default function DashboardPage() {
   function handleLogout() {
     clearSession();
     router.replace("/login");
+  }
+
+  function navigateToView(view: string) {
+    setActiveKey(view);
+    router.push(buildDashboardRoute(view));
   }
 
   function onInputChange(fieldKey: string, value: unknown) {
@@ -453,7 +465,7 @@ export default function DashboardPage() {
               className={`mb-2 w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                 activeKey === "reportes" ? "bg-teal-600 text-white" : "bg-white/70 text-slate-700 hover:bg-white"
               }`}
-              onClick={() => setActiveKey("reportes")}
+              onClick={() => navigateToView("reportes")}
             >
               Reportes y tablero
             </button>
@@ -462,7 +474,7 @@ export default function DashboardPage() {
               className={`mb-2 w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                 activeKey === "operaciones" ? "bg-emerald-600 text-white" : "bg-white/70 text-slate-700 hover:bg-white"
               }`}
-              onClick={() => setActiveKey("operaciones")}
+              onClick={() => navigateToView("operaciones")}
             >
               Operaciones rápidas
             </button>
@@ -474,7 +486,7 @@ export default function DashboardPage() {
                   className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                     activeKey === module.key ? "bg-slate-900 text-white" : "bg-white/70 text-slate-700 hover:bg-white"
                   }`}
-                  onClick={() => setActiveKey(module.key)}
+                  onClick={() => navigateToView(module.key)}
                 >
                   {module.title}
                 </button>
@@ -531,7 +543,7 @@ export default function DashboardPage() {
                 className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   activeKey === "reportes" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
                 }`}
-                onClick={() => setActiveKey("reportes")}
+                onClick={() => navigateToView("reportes")}
               >
                 Reportes
               </button>
@@ -539,7 +551,7 @@ export default function DashboardPage() {
                 className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                   activeKey === "operaciones" ? "bg-emerald-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
                 }`}
-                onClick={() => setActiveKey("operaciones")}
+                onClick={() => navigateToView("operaciones")}
               >
                 Operaciones
               </button>
@@ -549,7 +561,7 @@ export default function DashboardPage() {
                   className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     activeKey === module.key ? "bg-slate-900 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
                   }`}
-                  onClick={() => setActiveKey(module.key)}
+                  onClick={() => navigateToView(module.key)}
                 >
                   {module.title}
                 </button>
@@ -596,7 +608,7 @@ export default function DashboardPage() {
                       ? "border-emerald-200 bg-emerald-50 shadow-sm"
                       : "border-slate-200 bg-white/80 hover:border-teal-200 hover:bg-white"
                   }`}
-                  onClick={() => setActiveKey(module.key)}
+                  onClick={() => navigateToView(module.key)}
                 >
                   <p className="text-sm font-semibold text-slate-900">{module.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-500">{module.description}</p>
@@ -1351,5 +1363,27 @@ function filterRows(rows: Array<Record<string, unknown>>, search: string) {
   );
 }
 
+function buildDashboardRoute(view: string) {
+  return `/dashboard/${view}`;
+}
+
 const operationInputClassName =
   "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400";
+
+export default function DashboardIndexPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const currentUser = getStoredUser();
+    const fallbackView = currentUser?.role === "ADMINISTRADOR" ? "usuarios" : "clientes";
+    router.replace(buildDashboardRoute(fallbackView));
+  }, [router]);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center">
+      <div className="glass-panel rounded-3xl px-8 py-6 text-base font-medium text-slate-700">
+        Cargando módulo...
+      </div>
+    </main>
+  );
+}

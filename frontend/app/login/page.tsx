@@ -62,47 +62,30 @@ export default function LoginPage() {
             Recreo Campestre Heliconias Pucallpa
           </div>
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-900 lg:text-6xl">
-            Atención y control interno con enfoque operativo, caja y auditoría.
+            Atención y control interno.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            Plataforma para reservas, pedidos, pagos, caja, productos y reportes del recreo, con seguridad JWT, perfiles
-            diferenciados y datos iniciales listos para trabajar.
+            Recreo Campestre Heliconias Pucallpa
           </p>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {[
-              "Dashboard ejecutivo con indicadores diarios",
-              "CRUDs del backend conectados desde un solo panel",
-              "Control de reservas, mesas, pedidos y pagos",
-              "Reportes obligatorios, ventas, caja y auditoría"
-            ].map((item) => (
-              <article key={item} className="rounded-3xl border border-white/70 bg-white/70 p-5 shadow-sm">
-                <p className="text-base font-medium text-slate-800">{item}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="mt-12 rounded-[1.5rem] border border-teal-100 bg-slate-900 px-6 py-5 text-slate-100">
-            <p className="text-sm uppercase tracking-[0.24em] text-teal-300">Accesos de prueba</p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm text-slate-400">Administrador</p>
-                <p className="text-base font-semibold">admin / Admin2026*</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Operador</p>
-                <p className="text-base font-semibold">operador / Operador2026*</p>
-              </div>
-            </div>
+          <div className="mt-12 grid gap-4 md:grid-cols-2">
+            <article className="rounded-[1.5rem] border border-white/70 bg-white/70 p-6 shadow-sm">
+              <p className="text-sm uppercase tracking-[0.24em] text-teal-700">Administrador</p>
+              <p className="mt-3 text-xl font-semibold text-slate-900">admin / Admin2026*</p>
+            </article>
+            <article className="rounded-[1.5rem] border border-white/70 bg-white/70 p-6 shadow-sm">
+              <p className="text-sm uppercase tracking-[0.24em] text-teal-700">Operador</p>
+              <p className="mt-3 text-xl font-semibold text-slate-900">operador / Operador2026*</p>
+            </article>
           </div>
         </section>
 
         <section className="glass-panel rounded-[2rem] p-8 lg:p-10">
           <div className="mb-8">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-teal-700">Iniciar sesión</p>
-            <h2 className="mt-3 text-3xl font-semibold text-slate-900">Ingreso seguro al sistema</h2>
+            <h2 className="mt-3 text-3xl font-semibold text-slate-900">Recreo Campestre Heliconias Pucallpa</h2>
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              Usa tus credenciales y entra al panel de operaciones del recreo.
+              Atención y control interno.
             </p>
           </div>
 
