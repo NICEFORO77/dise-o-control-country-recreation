@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY .mvn /app/.mvn
 COPY mvnw mvnw.cmd pom.xml /app/
-RUN chmod +x /app/mvnw
+RUN sed -i 's/\r$//' /app/mvnw && chmod +x /app/mvnw
 RUN /app/mvnw -q -DskipTests dependency:go-offline
 
 COPY . /app
