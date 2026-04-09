@@ -29,11 +29,23 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         Map<String, Object> user = findUserByUsername(request.username());
         String passwordHash = String.valueOf(user.get("password_hash"));
-        if (!passwordEncoder.matches(request.password(), passwordHash)) {
+        boolean authenticated = passwordHash.startsWith("$argon2")
+                ? passwordEncoder.matches(request.password(), passwordHash)
+                : request.password().equals(passwordHash);
+
+        if (!authenticated) {
             throw new ResponseStatusException(UNAUTHORIZED, "Credenciales inválidas");
         }
 
         Integer userId = ((Number) user.get("id_usuario")).intValue();
+        if (!passwordHash.startsWith("$argon2")) {
+            jdbcTemplate.update(
+                    "UPDATE heliconias.usuarios SET password_hash = ? WHERE id_usuario = ?",
+                    passwordEncoder.encode(request.password()),
+                    userId
+            );
+        }
+
         jdbcTemplate.update(
                 "UPDATE heliconias.usuarios SET ultimo_acceso = CURRENT_TIMESTAMP WHERE id_usuario = ?",
                 userId

@@ -30,6 +30,8 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [moduleSearch, setModuleSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedProductFile, setSelectedProductFile] = useState<File | null>(null);
   const [productImageError, setProductImageError] = useState("");
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -42,9 +44,12 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
   });
 
   const visibleModules = modules.filter((module) => !user || module.roles.includes(user.role));
+  const navigationModules = visibleModules.filter((module) => module.showInNavigation !== false);
   const activeModule = visibleModules.find((module) => module.key === activeKey) ?? visibleModules[0] ?? null;
   const deferredSearch = useDeferredValue(moduleSearch);
   const displayedRows = filterRows(rows, deferredSearch);
+  const totalPages = Math.max(1, Math.ceil(displayedRows.length / pageSize));
+  const paginatedRows = displayedRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   async function loadOperationsWorkspace(currentUser: SessionUser) {
     const [clientes, mesas, reservas, pedidos, productos, codigos] = await Promise.all([
@@ -119,6 +124,16 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
       isMounted = false;
     };
   }, [initialView, router]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeKey, deferredSearch, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     if (!user) {
@@ -480,7 +495,7 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
             </button>
 
             <div className="space-y-2">
-              {visibleModules.map((module) => (
+              {navigationModules.map((module) => (
                 <button
                   key={module.key}
                   className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
@@ -522,100 +537,54 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
                       : activeModule?.description}
                 </p>
               </div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                API Backend: <span className="font-semibold">{API_URL}</span>
+              <div className="rounded-2xl border border-teal-100 bg-white/90 px-4 py-3 text-sm text-slate-600 shadow-sm">
+                <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 align-middle" />
+                Backend conectado:
+                <span className="ml-2 rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-800">
+                  {API_URL.replace(/^https?:\/\//, "")}
+                </span>
               </div>
             </div>
           </header>
 
-          <section className="glass-panel rounded-[1.8rem] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-teal-700">Vistas del sistema</p>
-                <h3 className="mt-1 text-lg font-semibold text-slate-900">Acceso directo a todas las tablas y paneles</h3>
-              </div>
-              <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                {visibleModules.length} tablas visibles
-              </span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              <button
-                className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  activeKey === "reportes" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-                onClick={() => navigateToView("reportes")}
-              >
-                Reportes
-              </button>
-              <button
-                className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  activeKey === "operaciones" ? "bg-emerald-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-                onClick={() => navigateToView("operaciones")}
-              >
-                Operaciones
-              </button>
-              {visibleModules.map((module) => (
-                <button
-                  key={`quick-${module.key}`}
-                  className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    activeKey === module.key ? "bg-slate-900 text-white" : "bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                  onClick={() => navigateToView(module.key)}
-                >
-                  {module.title}
-                </button>
-              ))}
-            </div>
-          </section>
+          {activeKey === "reportes" ? (
+            <>
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {summaryCards.map((card) => (
+                  <article key={card.key} className="glass-panel rounded-[1.6rem] p-5">
+                    <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{card.label}</p>
+                    <p className="mt-4 text-3xl font-semibold text-slate-900">{summary[card.key] ?? 0}</p>
+                  </article>
+                ))}
+              </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {summaryCards.map((card) => (
-              <article key={card.key} className="glass-panel rounded-[1.6rem] p-5">
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">{card.label}</p>
-                <p className="mt-4 text-3xl font-semibold text-slate-900">{summary[card.key] ?? 0}</p>
-              </article>
-            ))}
-          </section>
-
-          <section className="glass-panel rounded-[1.8rem] p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-teal-700">Módulos del sistema</p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-900">Acceso directo a cada área</h3>
-              </div>
-              {activeModule && activeKey !== "reportes" && activeKey !== "operaciones" ? (
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                    {displayedRows.length} registros
-                  </span>
-                  <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">
-                    {activeModule.readOnly ? "Solo lectura" : "CRUD activo"}
-                  </span>
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                    {activeModule.roles.join(" / ")}
-                  </span>
+              <section className="glass-panel rounded-[1.8rem] p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-teal-700">Módulos del sistema</p>
+                    <h3 className="mt-2 text-xl font-semibold text-slate-900">Acceso directo a cada área</h3>
+                  </div>
                 </div>
-              ) : null}
-            </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {visibleModules.map((module) => (
-                <button
-                  key={`card-${module.key}`}
-                  className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
-                    activeKey === module.key
-                      ? "border-emerald-200 bg-emerald-50 shadow-sm"
-                      : "border-slate-200 bg-white/80 hover:border-teal-200 hover:bg-white"
-                  }`}
-                  onClick={() => navigateToView(module.key)}
-                >
-                  <p className="text-sm font-semibold text-slate-900">{module.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{module.description}</p>
-                </button>
-              ))}
-            </div>
-          </section>
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {navigationModules.map((module) => (
+                    <button
+                      key={`card-${module.key}`}
+                      className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
+                        activeKey === module.key
+                          ? "border-emerald-200 bg-emerald-50 shadow-sm"
+                          : "border-slate-200 bg-white/80 hover:border-teal-200 hover:bg-white"
+                      }`}
+                      onClick={() => navigateToView(module.key)}
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{module.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{module.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          ) : null}
 
           {message ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div> : null}
           {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
@@ -664,24 +633,24 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
             </section>
           ) : activeKey === "operaciones" ? (
             <section className="grid gap-4 xl:grid-cols-2">
-              <article className="glass-panel rounded-[1.8rem] bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-6 text-white">
-                <p className="text-xs uppercase tracking-[0.28em] text-emerald-100">Recreo turístico</p>
-                <h3 className="mt-3 text-2xl font-semibold">Flujo operativo listo para atención</h3>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50/90">
+              <article className="rounded-[1.8rem] border border-emerald-200 bg-gradient-to-br from-emerald-700 via-teal-700 to-cyan-800 p-6 text-white shadow-[0_20px_60px_rgba(6,78,59,0.24)]">
+                <p className="text-xs uppercase tracking-[0.28em] text-emerald-100/90">Recreo turístico</p>
+                <h3 className="mt-3 text-2xl font-semibold text-white">Flujo operativo listo para atención</h3>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-50">
                   Registra una reserva, abre el pedido, agrega consumos y simula el pago sin salir del panel.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-white/12 px-4 py-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/14 px-4 py-3 backdrop-blur-sm">
                     <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Próx. reserva</p>
-                    <p className="mt-2 text-xl font-semibold">{codes.reserva ?? "R0001"}</p>
+                    <p className="mt-2 text-xl font-semibold text-white">{codes.reserva ?? "R0001"}</p>
                   </div>
-                  <div className="rounded-2xl bg-white/12 px-4 py-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/14 px-4 py-3 backdrop-blur-sm">
                     <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Próx. pedido</p>
-                    <p className="mt-2 text-xl font-semibold">{codes.pedido ?? "PD0001"}</p>
+                    <p className="mt-2 text-xl font-semibold text-white">{codes.pedido ?? "PD0001"}</p>
                   </div>
-                  <div className="rounded-2xl bg-white/12 px-4 py-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/14 px-4 py-3 backdrop-blur-sm">
                     <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Mesas cargadas</p>
-                    <p className="mt-2 text-xl font-semibold">{lookups.mesas?.length ?? 0}</p>
+                    <p className="mt-2 text-xl font-semibold text-white">{lookups.mesas?.length ?? 0}</p>
                   </div>
                 </div>
               </article>
@@ -1011,6 +980,15 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
+                    <select
+                      value={String(pageSize)}
+                      onChange={(event) => setPageSize(Number(event.target.value))}
+                      className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 outline-none transition focus:border-teal-400"
+                    >
+                      <option value="10">10 por página</option>
+                      <option value="20">20 por página</option>
+                      <option value="50">50 por página</option>
+                    </select>
                     <input
                       type="search"
                       value={moduleSearch}
@@ -1034,9 +1012,9 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {displayedRows.length ? (
-                        displayedRows.map((row) => (
-                          <tr key={String(row[activeModule?.idField ?? "id"])} className="border-b border-slate-100 align-top last:border-0">
+                      {paginatedRows.length ? (
+                        paginatedRows.map((row, index) => (
+                          <tr key={buildRowKey(row, activeModule, index)} className="border-b border-slate-100 align-top last:border-0">
                             {Object.entries(row).map(([column, value]) => (
                               <td key={column} className="px-3 py-2 text-slate-700 whitespace-nowrap">
                                 {formatCell(column, value)}
@@ -1074,6 +1052,34 @@ export function DashboardViewPage({ initialView }: { initialView: string }) {
                     </tbody>
                   </table>
                 </div>
+                {displayedRows.length ? (
+                  <div className="flex flex-col gap-3 border-t border-slate-200/70 px-5 py-4 text-sm text-slate-500 lg:flex-row lg:items-center lg:justify-between">
+                    <p>
+                      Mostrando {Math.min((currentPage - 1) * pageSize + 1, displayedRows.length)} a {Math.min(currentPage * pageSize, displayedRows.length)} de {displayedRows.length} registros
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={currentPage === 1}
+                        className="rounded-xl border border-slate-200 px-3 py-2 font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <span className="rounded-xl bg-slate-100 px-3 py-2 font-medium text-slate-700">
+                        Página {currentPage} de {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={currentPage === totalPages}
+                        className="rounded-xl border border-slate-200 px-3 py-2 font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </section>
 
               <section className="glass-panel rounded-[1.8rem] p-5">
@@ -1275,8 +1281,13 @@ function normalizePayload(module: ModuleConfig, form: Record<string, unknown>) {
       continue;
     }
 
-    if (field.type === "number" || field.type === "select") {
+    if (field.type === "number") {
       payload[field.key] = Number(rawValue);
+      continue;
+    }
+
+    if (field.type === "select") {
+      payload[field.key] = field.lookupResource ? Number(rawValue) : rawValue;
       continue;
     }
 
@@ -1334,6 +1345,22 @@ function formatCell(column: string, value: unknown) {
     return <img src={`${API_URL}${value}`} alt="Producto" className="h-12 w-12 rounded-xl object-cover" />;
   }
 
+  if ((column === "valores_anteriores" || column === "valores_nuevos") && typeof value === "object") {
+    return (
+      <pre className="max-w-[340px] overflow-x-auto whitespace-pre-wrap rounded-2xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    );
+  }
+
+  if ((column === "valores_anteriores" || column === "valores_nuevos") && typeof value === "string") {
+    return (
+      <pre className="max-w-[340px] overflow-x-auto whitespace-pre-wrap rounded-2xl bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-700">
+        {value}
+      </pre>
+    );
+  }
+
   if (typeof value === "boolean") {
     return value ? "Sí" : "No";
   }
@@ -1361,6 +1388,25 @@ function filterRows(rows: Array<Record<string, unknown>>, search: string) {
   return rows.filter((row) =>
     Object.values(row).some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch))
   );
+}
+
+function buildRowKey(row: Record<string, unknown>, module: ModuleConfig | null, index: number) {
+  if (module?.idField && row[module.idField] !== null && typeof row[module.idField] !== "undefined") {
+    return `${module.key}-${String(row[module.idField])}`;
+  }
+
+  const fallbackIdEntry = Object.entries(row).find(([key, value]) => {
+    if (value === null || typeof value === "undefined" || value === "") {
+      return false;
+    }
+    return key.startsWith("id_") || key.startsWith("codigo_");
+  });
+
+  if (fallbackIdEntry) {
+    return `${module?.key ?? "row"}-${fallbackIdEntry[0]}-${String(fallbackIdEntry[1])}`;
+  }
+
+  return `${module?.key ?? "row"}-${index}`;
 }
 
 function buildDashboardRoute(view: string) {

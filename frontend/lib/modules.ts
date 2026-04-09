@@ -19,6 +19,7 @@ export type ModuleConfig = {
   roles: string[];
   readOnly?: boolean;
   allowDelete?: boolean;
+  showInNavigation?: boolean;
   fields: FieldConfig[];
 };
 
@@ -269,6 +270,7 @@ export const modules: ModuleConfig[] = [
     endpoint: "/api/crud/simulaciones-pago",
     idField: "id_simulacion",
     roles: ["ADMINISTRADOR", "OPERADOR"],
+    showInNavigation: false,
     fields: [
       { key: "id_pedido", label: "Pedido", type: "select", required: true, lookupResource: "pedidos", optionValue: "id_pedido", optionLabel: "codigo_pedido" },
       { key: "subtotal", label: "Subtotal", type: "number", required: true },
